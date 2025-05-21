@@ -4,8 +4,18 @@ on:
 jobs:
   build-project:
     name: Build Project
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.os}}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
+      - name: Install dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update && sudo apt install -y cmake
+
       - name: Checkout
         uses: actions/checkout@v4.1.2
 
