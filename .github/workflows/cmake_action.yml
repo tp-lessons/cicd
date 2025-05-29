@@ -7,37 +7,38 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Add WiX to PATH (if not auto-detected)
-      run: |
-        $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
-        if (Test-Path $wixPath) {
-          Add-Content $env:GITHUB_PATH "$wixPath"
-        } else {
-          Write-Host "WiX Toolset not found at $wixPath"
-          exit 1
-        }
+      - name: Setup CMake
+        uses: actions/setup-cmake@v1  # Используем стабильную версию v1
+        with:
+          cmake-version: '3.27'       # Указываем конкретную версию CMake
 
-    - name: Setup CMake
-      uses: actions/setup-cmake@v3
-      with:
-        cmake-version: '3.27'  # Проверьте актуальную версию на GitHub
+      - name: Add WiX Toolset to PATH (если не находится автоматически)
+        run: |
+          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          if (Test-Path $wixPath) {
+            echo "WiX found at $wixPath, adding to PATH..."
+            echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } else {
+            Write-Error "WiX Toolset not found at $wixPath!"
+            exit 1
+          }
 
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-    - name: Build
-      run: cmake --build build --config Release
+      - name: Build
+        run: cmake --build build --config Release
 
-    - name: Generate MSI with CPack
-      run: |
-        cd build
-        cpack -G WIX -C Release
+      - name: Generate MSI with CPack
+        run: |
+          cd build
+          cpack -G WIX -C Release
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: HelloWorld-Installer
-        path: build/HelloWorld-*.msi
+      - name: Upload MSI Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: HelloWorld-Installer
+          path: build/HelloWorld-*.msi
