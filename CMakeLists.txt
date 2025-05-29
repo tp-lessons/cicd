@@ -6,7 +6,7 @@ project(hello VERSION 1.0.0 LANGUAGES CXX)
 add_subdirectory(src)
 
 # Установка приложения
-install(TARGETS hello_world
+install(TARGETS hello
     RUNTIME DESTINATION "bin"
     CONFIGURATIONS Release
 )
