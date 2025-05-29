@@ -22,7 +22,7 @@ jobs:
 
       - name: Add WiX Toolset to PATH (если не находится автоматически)
         run: |
-          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
           if (Test-Path $wixPath) {
             echo "WiX found at $wixPath, adding to PATH..."
             echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
