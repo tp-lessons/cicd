@@ -38,7 +38,7 @@ jobs:
           cpack -G WIX -C Release
 
       - name: Upload MSI Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: HelloWorld-Installer
           path: build/HelloWorld-*.msi
