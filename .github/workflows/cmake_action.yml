@@ -15,8 +15,10 @@ jobs:
         with:
           cmake-version: '3.27'       # Указываем конкретную версию CMake
 
-      - name: Install WiX via Chocolatey
-        run: choco install wixtoolset -y
+      - name: Debug WiX
+        run: |
+          Get-Command candle.exe -ErrorAction SilentlyContinue
+          candle -?
 
       - name: Add WiX Toolset to PATH (если не находится автоматически)
         run: |
