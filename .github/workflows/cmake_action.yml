@@ -1,122 +1,36 @@
-name: C++ CI/CD Pipeline
+name: Build and Package
 
-on:
-  push:
-    branches: [ main, master, feature/cicd ]
-  pull_request:
-    branches: [ main, master ]
+on: [push, pull_request]
 
 jobs:
-  clang-format-check:
-    name: Check code formatting with clang-format
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install clang-format
-        run: sudo apt-get install -y clang-format
-
-      - name: Check formatting
-        run: |
-          find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|h\)' -exec clang-format --style=Mozilla --dry-run --Werror {} \;
-
   build:
-    name: Build with CMake
-    needs: clang-format-check
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        build-type: [Debug, Release]
-    
+    runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Configure CMake
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DBUILD_TESTS=ON
+    - name: Setup CMake
+      uses: actions/setup-cmake@v3
 
-      - name: Build project
-        run: cmake --build build --config ${{ matrix.build-type }}
+    - name: Add WiX to PATH
+      run: |
+        $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+        Add-Content $env:GITHUB_PATH "$wixPath"
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ matrix.build-type }}
-          path: build/
-          retention-days: 1
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-  test:
-    name: Run Google Tests
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        build-type: [Debug, Release]
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-${{ matrix.build-type }}
-          path: build/
+    - name: Build
+      run: cmake --build build --config Release
 
-      - name: Install GTest (if not bundled)
-        run: |
-          sudo apt-get install -y libgtest-dev
+    - name: Package
+      run: |
+        cd build
+        cpack -G WIX -C Release
 
-      - name: Run tests
-        run: |
-          cd build && ctest --output-on-failure
-
-  generate-docs:
-    name: Generate Doxygen documentation
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Doxygen
-        run: sudo apt-get install -y doxygen graphviz
-
-      - name: Generate docs
-        run: |
-          doxygen Doxyfile
-
-      - name: Upload docs as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: doxygen-docs
-          path: docs/
-          retention-days: 1
-
-  create-release:
-    name: Create GitHub Release
-    needs: generate-docs
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Get version from CMake
-        id: version
-        run: |
-          echo "version=$(grep 'project(' CMakeLists.txt | sed -E 's/.*VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: Release v${{ steps.version.outputs.version }}
-          body: "Automated release with built binaries and documentation."
-          files: |
-            build/your_project_name
-            docs/**/*
-          draft: false
-          prerelease: false
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: HelloWorldInstaller
+        path: build/HelloWorld-1.0.0-win64.msi
