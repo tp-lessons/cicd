@@ -10,13 +10,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install WiX Toolset
-      uses: robotdad/wix-setup-action@v1
+    - name: Add WiX to PATH (if not auto-detected)
+      run: |
+        $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+        if (Test-Path $wixPath) {
+          Add-Content $env:GITHUB_PATH "$wixPath"
+        } else {
+          Write-Host "WiX Toolset not found at $wixPath"
+          exit 1
+        }
 
     - name: Setup CMake
       uses: actions/setup-cmake@v3
       with:
-        cmake-version: '3.27'  # Укажите нужную версию CMake
+        cmake-version: '3.27'  # Проверьте актуальную версию на GitHub
 
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -24,7 +31,7 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Package
+    - name: Generate MSI with CPack
       run: |
         cd build
         cpack -G WIX -C Release
@@ -32,5 +39,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: HelloWorldInstaller
-        path: build/HelloWorld-*.msi  # Универсальное имя для MSI
+        name: HelloWorld-Installer
+        path: build/HelloWorld-*.msi
