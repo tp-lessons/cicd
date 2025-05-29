@@ -11,16 +11,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v2  # Используем стабильную версию v1
+        uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: '3.27'       # Указываем конкретную версию CMake
+          cmake-version: '3.27'
 
       - name: Debug WiX
         run: |
           Get-Command candle.exe -ErrorAction SilentlyContinue
           candle -?
 
-      - name: Add WiX Toolset to PATH (если не находится автоматически)
+      - name: Add WiX Toolset to PATH
         run: |
           $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
           if (Test-Path $wixPath) {
